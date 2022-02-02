@@ -1,0 +1,45 @@
+#Appsilon_Interview_assignment_02/2022
+#General overview: 
+  #Build a dashboard that main purpose is to visualize selected species 
+  #observations on the map and how often it is observed.
+#Original dataset is large and covers the whole world. 
+#Please use only observations from Poland.
+#Specific requirements:
+  #1)Users should be able to search for species by their vernacularName and scientificName. 
+  #2)Search field should return matching names and after selecting one result, 
+  #the app displays its observations on the map. selectizeInput()
+  #3)Users should be able to view a visaualization of a timeline when selected 
+  #species were observed.
+
+#Default view when no species is selected yet should make sense to the user. It shouldn’t be just an empty map and plot. Please decide what you will display.
+#[Optional] Use your creativity and add features that you would like to see in this application.
+
+library(dplyr)
+x<-read.csv("sample.csv")
+x<-colnames(x)
+sample<-read.csv("sample1.csv")
+sample<-rbind(sample,x)
+colnames(sample) <- as.character(sample[48461, ])
+
+
+sample[] <- lapply(sample, readr::parse_guess) 
+sample$longitudeDecimal<-as.numeric(sample$longitudeDecimal)
+sample$latitudeDecimal<-as.numeric(sample$latitudeDecimal)
+sample$eventDate<-as.POSIXct(strptime(sample$eventDate, format = "%Y-%m-%d"))
+sample$individualCount<-as.numeric(sample$individualCount)
+
+library(leaflet)
+library(ggplot2)
+
+sample%>% 
+  filter(.,vernacularName== 'Bastard Cabbage')%>%
+  leaflet() %>%
+  addTiles() %>%
+  addMarkers(lng= ~longitudeDecimal, lat=~latitudeDecimal, 
+             popup = ~paste(vernacularName, scientificName, sep = '<br/>'))  
+
+
+sample%>% 
+  filter(.,vernacularName== 'Alpine Accentor')%>%
+  ggplot(aes(x=eventDate, y=individualCount))+
+  geom_point()
