@@ -13,25 +13,29 @@
 
 #Default view when no species is selected yet should make sense to the user. It shouldn’t be just an empty map and plot. Please decide what you will display.
 #[Optional] Use your creativity and add features that you would like to see in this application.
-
+setwd("~/Desktop/What-if Project/Appsilon_Interview_Assignments/biodiversity-data")
 library(dplyr)
-x<-read.csv("sample.csv")
-x<-colnames(x)
+library(readr)
+x<-read.csv("sample1.csv")
+Poland_data<-Poland_data[,-1]
+Poland_data_col<-colnames(read.csv("col_header.csv")[1,])
+
 sample<-read.csv("sample1.csv")
-sample<-rbind(sample,x)
-colnames(sample) <- as.character(sample[48461, ])
+x<-rbind(x,Poland_data_col)
+colnames(x) <- as.character(Poland_data_col)
 
 
-sample[] <- lapply(sample, readr::parse_guess) 
-sample$longitudeDecimal<-as.numeric(sample$longitudeDecimal)
-sample$latitudeDecimal<-as.numeric(sample$latitudeDecimal)
-sample$eventDate<-as.POSIXct(strptime(sample$eventDate, format = "%Y-%m-%d"))
-sample$individualCount<-as.numeric(sample$individualCount)
+x[] <- lapply(x, readr::parse_guess) 
+x$longitudeDecimal<-as.numeric(x$longitudeDecimal)
+x$latitudeDecimal<-as.numeric(x$latitudeDecimal)
+x$eventDate<-(strptime(x$eventDate, format = "%Y-%m-%d"))
+x$eventDate<-as.POSIXct(x$eventDate, format = "%d-%m-%Y")
+x$individualCount<-as.numeric(x$individualCount)
 
 library(leaflet)
 library(ggplot2)
 
-sample%>% 
+Poland_data%>% 
   filter(.,vernacularName== 'Bastard Cabbage')%>%
   leaflet() %>%
   addTiles() %>%
@@ -39,7 +43,13 @@ sample%>%
              popup = ~paste(vernacularName, scientificName, sep = '<br/>'))  
 
 
-sample%>% 
-  filter(.,vernacularName== 'Alpine Accentor')%>%
+Poland_data%>% 
+  filter(.,family== "ACCENTORS_PRUNELLIDAE")%>%
   ggplot(aes(x=eventDate, y=individualCount))+
   geom_point()
+
+
+#Test shiny app
+install.packages("shinytest")
+library(shinytest)
+recordTest("~/workspace/Appsilon_Feb2022_Interview_Assignment")
