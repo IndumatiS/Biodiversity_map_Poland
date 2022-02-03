@@ -1,6 +1,13 @@
+#Libraries
 library(shiny)
 library(leaflet)
-library(RColorBrewer)
+library(ggplot2)
+library(dplyr)
+
+#Load the data
+Poland_data<-read.csv("./data/sample.csv")
+
+#-----------Rshiny------------------------
 
 ui <- bootstrapPage(
     tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
@@ -13,12 +20,13 @@ ui <- bootstrapPage(
 )
 
 server <- function(input, output, session) {
-    require(input$Vernacular_name)
     
-    updateSelectizeInput(session, "Vernacular_name", choices = unique(sample$vernacularName), server = TRUE)
-
-    output$map <- renderLeaflet({
-        sample%>% 
+    updateSelectizeInput(session, "Vernacular_name", choices = unique(Poland_data$vernacularName), server = TRUE)
+    
+    #Create base map
+    map_reactive <- reactive({
+        req(input$Vernacular_name)
+        Poland_data%>% 
             filter(.,vernacularName == input$Vernacular_name)%>%
             leaflet() %>%
             addTiles() %>%
@@ -26,27 +34,18 @@ server <- function(input, output, session) {
                        popup = ~paste(vernacularName, scientificName, sep = '<br/>'))
     })
     
+    # Call the reactive map of the world to render on the screen
+    output$map <- renderLeaflet({
+        map_reactive()
+    })
+    
     output$graph<-renderPlot({
-        sample%>% 
+        Poland_data%>% 
             filter(.,vernacularName== input$Vernacular_name)%>%
             ggplot(aes(x=eventDate, y=individualCount))+
             geom_point()
     })
     
-    # Use a separate observer to recreate the legend as needed.
-    observe({
-        proxy <- leafletProxy("map", data = quakes)
-        
-        # Remove any existing legend, and only if the legend is
-        # enabled, create a new one.
-        proxy %>% clearControls()
-        #if (input$legend) {
-           #pal <- colorpal()
-            #proxy %>% addLegend(position = "bottomright",
-                                #pal = pal, values = ~mag
-            #)
-        #}
-    })
 }
 
 shinyApp(ui, server)
