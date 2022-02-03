@@ -8,3 +8,5 @@ The filtered file was then processed as follows:
 
 The final processed file was then used to create the Rshiny application. 
 
+Trial_script contains trial code to generate the Rshiny components. It also contains shinyTest to automate testing. 
+app.R contains the actual UI and server components of the Rshiny app. The app has very basic features to render the locations of the selected species. The input asks to select species by their vernacular names. Upon selection the map then displays the locations in which they were spoted within Poland. The graph shows the timeline vs frequency of occurance of selected species of interest. 
