@@ -29,13 +29,14 @@ body<-dashboardBody(
         column(width=3,
                box(width=NULL,
                    selectInput("Select_animals", "How do you wish to select animals?", choice = c("Vernacular name", "Scientific name")),
-                   selectizeInput("Vernacular_name", "Select common name", choice = NULL),
+                   selectizeInput("Animal_name", "Select name", choice = NULL),
+                   #selectizeInput("Vernacular_name", "Select name", choice = NULL),
                    #uiOutput("moreControls"),
-                   checkboxInput("city", "Include City of London?",TRUE)
                    
                ),
                box(width=NULL,
-                   plotOutput("graph") 
+                   #plotOutput("graph") ,
+                   plotOutput("graph1")
                )
                
         )
@@ -51,30 +52,57 @@ ui<-dashboardPage(
 
 server <- function(input, output, session) {
     
-    updateSelectizeInput(session, "Vernacular_name", choices = unique(Poland_data$vernacularName), server = TRUE)
+    #updateSelectizeInput(session, "Vernacular_name", choices = unique(Poland_data$vernacularName), server = TRUE)
     
     #Selection of animals-more options
-    output$moreControls <- renderUI({
-        req(input$Select_animals)
-        if(input$Select_animals== "Vernacular name"){
-            updateSelectizeInput(session, "Vernacular_name", choices = unique(Poland_data$vernacularName), server = TRUE)
-        }
         
-        else {
-            #updateSelectizeInput(session, "Vernacular_name", choices = unique(Poland_data$scientificName), server = TRUE)
-        }
+        observe({
+            req(input$Select_animals)
+            if(input$Select_animals== "Vernacular name"){
+                updateSelectizeInput(session,"Animal_name", choices = unique(Poland_data$vernacularName, server = TRUE))
+            }
+            else {
+                updateSelectizeInput(session,"Animal_name", choices = unique(Poland_data$scientificName, server = TRUE))
+            }
+            
+        })
     
+    
+    Poland_data_vernacular<-reactive({
+        a <- Poland_data%>% 
+            filter(.,vernacularName== input$Animal_name)
+        return(a)
+    })
+    
+    Poland_data_scientific<-reactive({
+        a <- Poland_data%>% 
+            filter(.,scientificName== input$Animal_name)
+        return(a)
     })
     
     #Create base map
     map_reactive <- reactive({
-        req(input$Vernacular_name)
-        Poland_data%>% 
-            filter(.,vernacularName == input$Vernacular_name)%>%
-            leaflet() %>%
-            addTiles() %>%
-            addMarkers(lng= ~longitudeDecimal, lat=~latitudeDecimal, 
-                       popup = ~paste(vernacularName, scientificName, sep = '<br/>'))
+        req(input$Select_animals)
+        
+        if(input$Select_animals== "Vernacular name"){
+            map<-Poland_data_vernacular()%>% 
+                leaflet() %>%
+                addTiles() %>%
+                addMarkers(lng= ~longitudeDecimal, lat=~latitudeDecimal, 
+                           popup = ~paste(vernacularName, scientificName, sep = '<br/>'))
+                return(map)
+        }
+        
+        else {
+            map<-Poland_data_scientific()%>% 
+                leaflet() %>%
+                addTiles() %>%
+                addMarkers(lng= ~longitudeDecimal, lat=~latitudeDecimal, 
+                           popup = ~paste(vernacularName, scientificName, sep = '<br/>'))
+                return(map)
+            
+        }
+            
     })
     
     # Call the reactive map of the world to render on the screen
@@ -82,14 +110,30 @@ server <- function(input, output, session) {
         map_reactive()
     })
     
-    #Create graph for timeline vs occurrence
-    output$graph<-renderPlot({
-        Poland_data%>% 
-            filter(.,vernacularName== input$Vernacular_name)%>%
-            ggplot(aes(x=eventDate, y=individualCount))+
-            geom_point()+
-            xlab("Timeline (years)") +
-            ylab ("Occurance")
+    
+    output$graph1<-renderPlot({
+        
+        req(input$Select_animals)
+        if(input$Select_animals== "Vernacular name"){
+            graph1<-Poland_data_vernacular()%>%
+                ggplot(aes(x=eventDate, y=individualCount))+
+                geom_point()+
+                xlab("Timeline (years)") +
+                ylab ("Occurance") +
+                ggtitle(paste("Distribution of", input$Animal_name))
+                return(graph1)
+        }
+        
+        else {
+            graph1<-Poland_data_scientific()%>%
+                ggplot(aes(x=eventDate, y=individualCount))+
+                geom_point()+
+                xlab("Timeline (years)") +
+                ylab ("Occurance")+
+                ggtitle(paste("Distribution of", input$Animal_name))
+                return(graph1)
+        }
+        
     })
     
 }
