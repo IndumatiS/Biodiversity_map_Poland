@@ -6,6 +6,7 @@ library(dplyr)
 library(shinydashboard)
 library(leaflet)
 library(DT)
+library(shinyalert)
 
 #Load the data
 Poland_data<-read.csv("./data/Poland_data.csv")
@@ -71,19 +72,26 @@ server <- function(input, output, session) {
     Poland_data_vernacular<-reactive({
         a <- Poland_data%>% 
             filter(.,vernacularName== input$Animal_name)
-        validate(
-            need(!is.na(a$longitudeDecimal) | !is.na(a$latitudeDecimal), "This animal has no data associated with it")
-        )
-        #get()
+        
+            if(is.na(a$longitudeDecimal) | is.na(a$latitudeDecimal)){
+                a <- Poland_data%>% 
+                    filter(.,vernacularName== "Common Crane")
+                updateSelectizeInput(session,"Animal_name", selected = "Common Crane",choices = unique(Poland_data$vernacularName, server = TRUE))
+                shinyalert("This animal has no data associated with it. Please select another animal", "Reverting to Common Crane selection", type = "error")
+            }
+    
         return(a)
     })
     
     Poland_data_scientific<-reactive({
         a <- Poland_data%>% 
             filter(.,scientificName== input$Animal_name)
-        validate(
-            need(!is.na(a$longitudeDecimal) | !is.na(a$latitudeDecimal), "This animal has no data associated with it")
-        )
+        if(is.na(a$longitudeDecimal) | is.na(a$latitudeDecimal)){
+            a <- Poland_data%>% 
+                filter(.,vernacularName== "Grus grus")
+            updateSelectizeInput(session,"Animal_name", selected = "Grus grus",choices = unique(Poland_data$scientificName, server = TRUE))
+            shinyalert("This animal has no data associated with it. Please select another animal", "Reverting to Grus grus selection", type = "warning")
+        }
         return(a)
     })
     
