@@ -59,10 +59,10 @@ server <- function(input, output, session) {
         observe({
             req(input$Select_animals)
             if(input$Select_animals== "Vernacular name"){
-                updateSelectizeInput(session,"Animal_name", choices = unique(Poland_data$vernacularName, server = TRUE))
+                updateSelectizeInput(session,"Animal_name", selected = "Common Crane",choices = unique(Poland_data$vernacularName, server = TRUE))
             }
             else {
-                updateSelectizeInput(session,"Animal_name", choices = unique(Poland_data$scientificName, server = TRUE))
+                updateSelectizeInput(session,"Animal_name", selected = "Grus grus",choices = unique(Poland_data$scientificName, server = TRUE))
             }
             
         })
@@ -71,12 +71,19 @@ server <- function(input, output, session) {
     Poland_data_vernacular<-reactive({
         a <- Poland_data%>% 
             filter(.,vernacularName== input$Animal_name)
+        validate(
+            need(!is.na(a$longitudeDecimal) | !is.na(a$latitudeDecimal), "This animal has no data associated with it")
+        )
+        #get()
         return(a)
     })
     
     Poland_data_scientific<-reactive({
         a <- Poland_data%>% 
             filter(.,scientificName== input$Animal_name)
+        validate(
+            need(!is.na(a$longitudeDecimal) | !is.na(a$latitudeDecimal), "This animal has no data associated with it")
+        )
         return(a)
     })
     
@@ -84,7 +91,14 @@ server <- function(input, output, session) {
     map_reactive <- reactive({
         req(input$Select_animals)
         
+    
+        #Condition 1-is the selection through vernacular name or scientific name?
         if(input$Select_animals== "Vernacular name"){
+            #Condition 2-does the filtered data frame have null fields for lat and long columns?
+            if(is.na(Poland_data_vernacular()$longitudeDecimal)){
+                
+                
+            }
             map<-Poland_data_vernacular()%>% 
                 leaflet() %>%
                 addTiles() %>%
