@@ -1,4 +1,4 @@
-#Appsilon_Interview_assignment_02/2022
+
 #General overview: 
   #Build a dashboard that main purpose is to visualize selected species 
   #observations on the map and how often it is observed.
